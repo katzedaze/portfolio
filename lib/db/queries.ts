@@ -30,14 +30,18 @@ export async function getSkillsByCategory() {
     yearsOfExperience: s.yearsOfExperience / 10,
   }));
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const grouped = formattedSkills.reduce((acc: any, s: any) => {
-    if (!acc[s.category]) {
-      acc[s.category] = [];
-    }
-    acc[s.category].push(s);
-    return acc;
-  }, {} as Record<string, any>);
+  const grouped = formattedSkills.reduce(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (acc: any, s: any) => {
+      if (!acc[s.category]) {
+        acc[s.category] = [];
+      }
+      acc[s.category].push(s);
+      return acc;
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    {} as Record<string, any>
+  );
 
   return grouped;
 }
