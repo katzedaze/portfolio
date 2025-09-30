@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { project } from '@/lib/db/schema';
-import { desc } from 'drizzle-orm';
-import { auth } from '@/lib/auth';
-import { projectSchema } from '@/lib/validations';
-import { ZodError } from 'zod';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { project } from "@/lib/db/schema";
+import { desc } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { projectSchema } from "@/lib/validations";
+import { ZodError } from "zod";
 
 export async function GET() {
   try {
@@ -14,8 +14,11 @@ export async function GET() {
       .orderBy(project.displayOrder, desc(project.startDate));
     return NextResponse.json(projects);
   } catch (error) {
-    console.error('Projects GET error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Projects GET error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -50,11 +53,14 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Validation Error', details: error.issues },
+        { error: "Validation Error", details: error.issues },
         { status: 400 }
       );
     }
-    console.error('Projects POST error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Projects POST error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { X, Plus } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { SkillCombobox } from '@/components/skill-combobox';
-import { Label } from '@/components/ui/label';
+import * as React from "react";
+import { X, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { SkillCombobox } from "@/components/skill-combobox";
+import { Label } from "@/components/ui/label";
 
 interface TechnologyMultiSelectProps {
   value: string[];
@@ -13,14 +13,18 @@ interface TechnologyMultiSelectProps {
   disabled?: boolean;
 }
 
-export function TechnologyMultiSelect({ value, onChange, disabled }: TechnologyMultiSelectProps) {
-  const [inputValue, setInputValue] = React.useState('');
+export function TechnologyMultiSelect({
+  value,
+  onChange,
+  disabled,
+}: TechnologyMultiSelectProps) {
+  const [inputValue, setInputValue] = React.useState("");
   const [isAdding, setIsAdding] = React.useState(false);
 
   const handleAdd = () => {
     if (inputValue.trim() && !value.includes(inputValue.trim())) {
       onChange([...value, inputValue.trim()]);
-      setInputValue('');
+      setInputValue("");
       setIsAdding(false);
     }
   };
@@ -30,7 +34,7 @@ export function TechnologyMultiSelect({ value, onChange, disabled }: TechnologyM
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleAdd();
     }
@@ -88,7 +92,7 @@ export function TechnologyMultiSelect({ value, onChange, disabled }: TechnologyM
               variant="outline"
               onClick={() => {
                 setIsAdding(false);
-                setInputValue('');
+                setInputValue("");
               }}
               disabled={disabled}
             >

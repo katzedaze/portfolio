@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { user } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { auth } from '@/lib/auth';
-import { z, ZodError } from 'zod';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { user } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { z, ZodError } from "zod";
 
 const emailChangeSchema = z.object({
-  newEmail: z.string().email('有効なメールアドレスを入力してください'),
+  newEmail: z.string().email("有効なメールアドレスを入力してください"),
 });
 
 export async function POST(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUsers.length > 0 && existingUsers[0].id !== session.user.id) {
       return NextResponse.json(
-        { error: 'このメールアドレスは既に使用されています' },
+        { error: "このメールアドレスは既に使用されています" },
         { status: 400 }
       );
     }
@@ -49,11 +49,14 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Validation Error', details: (error as ZodError).issues },
+        { error: "Validation Error", details: (error as ZodError).issues },
         { status: 400 }
       );
     }
-    console.error('Email change error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Email change error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

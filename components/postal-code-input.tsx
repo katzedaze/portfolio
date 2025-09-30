@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 
 interface PostalCodeInputProps {
   postalCode: string;
@@ -22,8 +22,8 @@ export function PostalCodeInput({
 
   useEffect(() => {
     // 郵便番号が7桁の数字になったら住所を自動検索
-    if (postalCode && /^\d{7}$/.test(postalCode.replace(/-/g, ''))) {
-      fetchAddress(postalCode.replace(/-/g, ''));
+    if (postalCode && /^\d{7}$/.test(postalCode.replace(/-/g, ""))) {
+      fetchAddress(postalCode.replace(/-/g, ""));
     }
   }, [postalCode]);
 
@@ -31,16 +31,21 @@ export function PostalCodeInput({
     setIsLoading(true);
     try {
       // yubinbango-core2を使用して郵便番号から住所を取得
-      const YubinBango = (await import('yubinbango-core2')).default;
+      const YubinBango = (await import("yubinbango-core2")).default;
 
-      new YubinBango.Core(code, (result: { region?: string; locality?: string; street?: string }) => {
-        if (result.region || result.locality || result.street) {
-          const fullAddress = `${result.region || ''}${result.locality || ''}${result.street || ''}`;
-          onAddressChange(fullAddress);
+      new YubinBango.Core(
+        code,
+        (result: { region?: string; locality?: string; street?: string }) => {
+          if (result.region || result.locality || result.street) {
+            const fullAddress = `${result.region || ""}${
+              result.locality || ""
+            }${result.street || ""}`;
+            onAddressChange(fullAddress);
+          }
         }
-      });
+      );
     } catch (error) {
-      console.error('Failed to fetch address:', error);
+      console.error("Failed to fetch address:", error);
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +53,7 @@ export function PostalCodeInput({
 
   const formatPostalCode = (value: string) => {
     // 数字のみを抽出
-    const numbers = value.replace(/\D/g, '');
+    const numbers = value.replace(/\D/g, "");
 
     // 7桁以上の場合は7桁まで
     const truncated = numbers.slice(0, 7);

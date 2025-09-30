@@ -1,20 +1,26 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from '@/lib/auth-client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { toast } from 'sonner';
-import { MarkdownRenderer } from '@/components/markdown-renderer';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useDropzone } from 'react-dropzone';
-import { Upload, X, User } from 'lucide-react';
-import { PostalCodeInput } from '@/components/postal-code-input';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDropzone } from "react-dropzone";
+import { Upload, X, User } from "lucide-react";
+import { PostalCodeInput } from "@/components/postal-code-input";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -23,21 +29,21 @@ export default function ProfilePage() {
   const [isFetching, setIsFetching] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [address, setAddress] = useState('');
-  const [website, setWebsite] = useState('');
-  const [githubUrl, setGithubUrl] = useState('');
-  const [twitterUrl, setTwitterUrl] = useState('');
-  const [linkedinUrl, setLinkedinUrl] = useState('');
-  const [bio, setBio] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [address, setAddress] = useState("");
+  const [website, setWebsite] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [twitterUrl, setTwitterUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [bio, setBio] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
     if (!isPending && !session) {
-      router.push('/admin/login');
+      router.push("/admin/login");
     }
   }, [session, isPending, router]);
 
@@ -49,25 +55,25 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('/api/profile');
+      const response = await fetch("/api/profile");
       if (response.ok) {
         const data = await response.json();
         if (data) {
-          setName(data.name || '');
-          setEmail(data.email || '');
-          setPhone(data.phone || '');
-          setPostalCode(data.postalCode || '');
-          setAddress(data.address || '');
-          setWebsite(data.website || '');
-          setGithubUrl(data.githubUrl || '');
-          setTwitterUrl(data.twitterUrl || '');
-          setLinkedinUrl(data.linkedinUrl || '');
-          setBio(data.bio || '');
-          setAvatarUrl(data.avatarUrl || '');
+          setName(data.name || "");
+          setEmail(data.email || "");
+          setPhone(data.phone || "");
+          setPostalCode(data.postalCode || "");
+          setAddress(data.address || "");
+          setWebsite(data.website || "");
+          setGithubUrl(data.githubUrl || "");
+          setTwitterUrl(data.twitterUrl || "");
+          setLinkedinUrl(data.linkedinUrl || "");
+          setBio(data.bio || "");
+          setAvatarUrl(data.avatarUrl || "");
         }
       }
     } catch (error) {
-      console.error('Failed to fetch profile:', error);
+      console.error("Failed to fetch profile:", error);
     } finally {
       setIsFetching(false);
     }
@@ -81,24 +87,24 @@ export default function ProfilePage() {
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
+      const response = await fetch("/api/upload", {
+        method: "POST",
         body: formData,
       });
 
       if (response.ok) {
         const data = await response.json();
         setAvatarUrl(data.url);
-        toast.success('アバター画像をアップロードしました');
+        toast.success("アバター画像をアップロードしました");
       } else {
         const errorData = await response.json();
-        toast.error(errorData.error || 'アップロードに失敗しました');
+        toast.error(errorData.error || "アップロードに失敗しました");
       }
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('アップロードに失敗しました');
+      console.error("Upload error:", error);
+      toast.error("アップロードに失敗しました");
     } finally {
       setIsUploading(false);
     }
@@ -107,7 +113,7 @@ export default function ProfilePage() {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.webp', '.gif'],
+      "image/*": [".jpeg", ".jpg", ".png", ".webp", ".gif"],
     },
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024, // 5MB
@@ -115,8 +121,8 @@ export default function ProfilePage() {
   });
 
   const handleRemoveAvatar = () => {
-    setAvatarUrl('');
-    toast.success('アバター画像を削除しました');
+    setAvatarUrl("");
+    toast.success("アバター画像を削除しました");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,9 +130,9 @@ export default function ProfilePage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
           email,
@@ -143,18 +149,18 @@ export default function ProfilePage() {
       });
 
       if (response.ok) {
-        toast.success('プロフィールを保存しました');
+        toast.success("プロフィールを保存しました");
       } else {
         const errorData = await response.json();
         if (errorData.details) {
           toast.error(`入力エラー: ${errorData.details[0]?.message}`);
         } else {
-          toast.error('保存に失敗しました');
+          toast.error("保存に失敗しました");
         }
       }
     } catch (error) {
-      console.error('Save error:', error);
-      toast.error('保存に失敗しました');
+      console.error("Save error:", error);
+      toast.error("保存に失敗しました");
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +183,7 @@ export default function ProfilePage() {
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold">プロフィール編集</h1>
-          <Button onClick={() => router.push('/admin')} variant="outline">
+          <Button onClick={() => router.push("/admin")} variant="outline">
             ダッシュボードに戻る
           </Button>
         </div>
@@ -185,7 +191,9 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>プロフィール情報</CardTitle>
-            <CardDescription>公開ページに表示されるプロフィールを編集します</CardDescription>
+            <CardDescription>
+              公開ページに表示されるプロフィールを編集します
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -224,19 +232,27 @@ export default function ProfilePage() {
                         transition-colors
                         ${
                           isDragActive
-                            ? 'border-primary bg-primary/5'
-                            : 'border-muted-foreground/25 hover:border-primary/50'
+                            ? "border-primary bg-primary/5"
+                            : "border-muted-foreground/25 hover:border-primary/50"
                         }
-                        ${isUploading || isLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                        ${
+                          isUploading || isLoading
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                        }
                       `}
                     >
                       <input {...getInputProps()} />
                       <div className="flex flex-col items-center gap-2">
                         <Upload className="h-10 w-10 text-muted-foreground" />
                         {isUploading ? (
-                          <p className="text-sm text-muted-foreground">アップロード中...</p>
+                          <p className="text-sm text-muted-foreground">
+                            アップロード中...
+                          </p>
                         ) : isDragActive ? (
-                          <p className="text-sm text-primary font-medium">ここにドロップしてください</p>
+                          <p className="text-sm text-primary font-medium">
+                            ここにドロップしてください
+                          </p>
                         ) : (
                           <>
                             <p className="text-sm font-medium">
@@ -381,8 +397,12 @@ export default function ProfilePage() {
                 </Tabs>
               </div>
 
-              <Button type="submit" disabled={isLoading || isUploading} className="w-full">
-                {isLoading ? '保存中...' : '保存'}
+              <Button
+                type="submit"
+                disabled={isLoading || isUploading}
+                className="w-full"
+              >
+                {isLoading ? "保存中..." : "保存"}
               </Button>
             </form>
           </CardContent>

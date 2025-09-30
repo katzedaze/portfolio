@@ -1,21 +1,40 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from '@/lib/auth-client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
-import { Pencil, Trash2, Plus, GripVertical, Calendar } from 'lucide-react';
-import { MarkdownRenderer } from '@/components/markdown-renderer';
-import { TechnologyMultiSelect } from '@/components/technology-multi-select';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { Pencil, Trash2, Plus, GripVertical, Calendar } from "lucide-react";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { TechnologyMultiSelect } from "@/components/technology-multi-select";
 import {
   DndContext,
   closestCenter,
@@ -24,15 +43,15 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Company {
   id: string;
@@ -68,7 +87,14 @@ function SortableProjectItem({
   onEdit: (project: Project) => void;
   onDelete: (id: string) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: project.id,
   });
 
@@ -79,9 +105,9 @@ function SortableProjectItem({
   };
 
   const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: 'long',
+    return new Date(date).toLocaleDateString("ja-JP", {
+      year: "numeric",
+      month: "long",
     });
   };
 
@@ -111,14 +137,23 @@ function SortableProjectItem({
                 )}
                 <CardDescription className="flex items-center gap-1 mt-1">
                   <Calendar className="h-3 w-3" />
-                  {formatDate(project.startDate)} 〜 {project.endDate ? formatDate(project.endDate) : '現在'}
+                  {formatDate(project.startDate)} 〜{" "}
+                  {project.endDate ? formatDate(project.endDate) : "現在"}
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => onEdit(project)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onEdit(project)}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => onDelete(project.id)}>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => onDelete(project.id)}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -154,13 +189,13 @@ export default function ProjectsPage() {
 
   const [formData, setFormData] = useState({
     companyId: null as string | null,
-    title: '',
-    startDate: '',
-    endDate: '',
+    title: "",
+    startDate: "",
+    endDate: "",
     technologies: [] as string[],
-    description: '',
-    responsibilities: '',
-    achievements: '',
+    description: "",
+    responsibilities: "",
+    achievements: "",
     displayOrder: 0,
   });
 
@@ -173,7 +208,7 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     if (!isPending && !session) {
-      router.push('/admin/login');
+      router.push("/admin/login");
     }
   }, [session, isPending, router]);
 
@@ -186,13 +221,13 @@ export default function ProjectsPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('/api/projects');
+      const response = await fetch("/api/projects");
       if (response.ok) {
         const data = await response.json();
         setProjects(data);
       }
     } catch (error) {
-      console.error('Failed to fetch projects:', error);
+      console.error("Failed to fetch projects:", error);
     } finally {
       setIsFetching(false);
     }
@@ -200,13 +235,13 @@ export default function ProjectsPage() {
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch('/api/companies');
+      const response = await fetch("/api/companies");
       if (response.ok) {
         const data = await response.json();
         setCompanies(data);
       }
     } catch (error) {
-      console.error('Failed to fetch companies:', error);
+      console.error("Failed to fetch companies:", error);
     }
   };
 
@@ -224,27 +259,29 @@ export default function ProjectsPage() {
       try {
         const updatePromises = newProjects.map((proj, index) =>
           fetch(`/api/projects/${proj.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               companyId: proj.companyId || null,
               title: proj.title,
-              startDate: new Date(proj.startDate).toISOString().split('T')[0],
-              endDate: proj.endDate ? new Date(proj.endDate).toISOString().split('T')[0] : null,
+              startDate: new Date(proj.startDate).toISOString().split("T")[0],
+              endDate: proj.endDate
+                ? new Date(proj.endDate).toISOString().split("T")[0]
+                : null,
               technologies: proj.technologies,
               description: proj.description,
-              responsibilities: proj.responsibilities || '',
-              achievements: proj.achievements || '',
+              responsibilities: proj.responsibilities || "",
+              achievements: proj.achievements || "",
               displayOrder: index,
             }),
           })
         );
 
         await Promise.all(updatePromises);
-        toast.success('表示順序を更新しました');
+        toast.success("表示順序を更新しました");
       } catch (error) {
-        console.error('Failed to update order:', error);
-        toast.error('表示順序の更新に失敗しました');
+        console.error("Failed to update order:", error);
+        toast.error("表示順序の更新に失敗しました");
         fetchProjects(); // Revert on error
       }
     }
@@ -255,12 +292,14 @@ export default function ProjectsPage() {
     setIsLoading(true);
 
     try {
-      const url = editingProject ? `/api/projects/${editingProject.id}` : '/api/projects';
-      const method = editingProject ? 'PUT' : 'POST';
+      const url = editingProject
+        ? `/api/projects/${editingProject.id}`
+        : "/api/projects";
+      const method = editingProject ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           companyId: formData.companyId || null,
           title: formData.title,
@@ -270,12 +309,18 @@ export default function ProjectsPage() {
           description: formData.description,
           responsibilities: formData.responsibilities,
           achievements: formData.achievements,
-          displayOrder: editingProject ? formData.displayOrder : projects.length,
+          displayOrder: editingProject
+            ? formData.displayOrder
+            : projects.length,
         }),
       });
 
       if (response.ok) {
-        toast.success(editingProject ? 'プロジェクトを更新しました' : 'プロジェクトを追加しました');
+        toast.success(
+          editingProject
+            ? "プロジェクトを更新しました"
+            : "プロジェクトを追加しました"
+        );
         setIsDialogOpen(false);
         resetForm();
         fetchProjects();
@@ -284,12 +329,12 @@ export default function ProjectsPage() {
         if (errorData.details) {
           toast.error(`入力エラー: ${errorData.details[0]?.message}`);
         } else {
-          toast.error('保存に失敗しました');
+          toast.error("保存に失敗しました");
         }
       }
     } catch (error) {
-      console.error('Save error:', error);
-      toast.error('保存に失敗しました');
+      console.error("Save error:", error);
+      toast.error("保存に失敗しました");
     } finally {
       setIsLoading(false);
     }
@@ -300,34 +345,36 @@ export default function ProjectsPage() {
     setFormData({
       companyId: project.companyId || null,
       title: project.title,
-      startDate: new Date(project.startDate).toISOString().split('T')[0],
-      endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
+      startDate: new Date(project.startDate).toISOString().split("T")[0],
+      endDate: project.endDate
+        ? new Date(project.endDate).toISOString().split("T")[0]
+        : "",
       technologies: project.technologies,
       description: project.description,
-      responsibilities: project.responsibilities || '',
-      achievements: project.achievements || '',
+      responsibilities: project.responsibilities || "",
+      achievements: project.achievements || "",
       displayOrder: project.displayOrder,
     });
     setIsDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('本当に削除しますか？')) return;
+    if (!confirm("本当に削除しますか？")) return;
 
     try {
       const response = await fetch(`/api/projects/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (response.ok) {
-        toast.success('プロジェクトを削除しました');
+        toast.success("プロジェクトを削除しました");
         fetchProjects();
       } else {
-        toast.error('削除に失敗しました');
+        toast.error("削除に失敗しました");
       }
     } catch (error) {
-      console.error('Delete error:', error);
-      toast.error('削除に失敗しました');
+      console.error("Delete error:", error);
+      toast.error("削除に失敗しました");
     }
   };
 
@@ -335,13 +382,13 @@ export default function ProjectsPage() {
     setEditingProject(null);
     setFormData({
       companyId: null,
-      title: '',
-      startDate: '',
-      endDate: '',
+      title: "",
+      startDate: "",
+      endDate: "",
       technologies: [],
-      description: '',
-      responsibilities: '',
-      achievements: '',
+      description: "",
+      responsibilities: "",
+      achievements: "",
       displayOrder: 0,
     });
   };
@@ -379,16 +426,25 @@ export default function ProjectsPage() {
               </DialogTrigger>
               <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>{editingProject ? 'プロジェクト編集' : 'プロジェクト追加'}</DialogTitle>
-                  <DialogDescription>プロジェクト情報を入力してください</DialogDescription>
+                  <DialogTitle>
+                    {editingProject ? "プロジェクト編集" : "プロジェクト追加"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    プロジェクト情報を入力してください
+                  </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="companyId">企業</Label>
                     <Select
-                      key={formData.companyId || 'none'}
-                      value={formData.companyId || 'none'}
-                      onValueChange={(value) => setFormData({ ...formData, companyId: value === 'none' ? null : value })}
+                      key={formData.companyId || "none"}
+                      value={formData.companyId || "none"}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          companyId: value === "none" ? null : value,
+                        })
+                      }
                       disabled={isLoading}
                     >
                       <SelectTrigger id="companyId" className="w-full">
@@ -413,7 +469,9 @@ export default function ProjectsPage() {
                     <Input
                       id="title"
                       value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
                       required
                       disabled={isLoading}
                       placeholder="例: ECサイトリニューアルプロジェクト"
@@ -427,19 +485,28 @@ export default function ProjectsPage() {
                         id="startDate"
                         type="date"
                         value={formData.startDate}
-                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            startDate: e.target.value,
+                          })
+                        }
                         required
                         disabled={isLoading}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="endDate">終了日（現在進行中の場合は空欄）</Label>
+                      <Label htmlFor="endDate">
+                        終了日（現在進行中の場合は空欄）
+                      </Label>
                       <Input
                         id="endDate"
                         type="date"
                         value={formData.endDate}
-                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, endDate: e.target.value })
+                        }
                         disabled={isLoading}
                       />
                     </div>
@@ -447,12 +514,16 @@ export default function ProjectsPage() {
 
                   <TechnologyMultiSelect
                     value={formData.technologies}
-                    onChange={(value) => setFormData({ ...formData, technologies: value })}
+                    onChange={(value) =>
+                      setFormData({ ...formData, technologies: value })
+                    }
                     disabled={isLoading}
                   />
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">プロジェクト説明（マークダウン形式）*</Label>
+                    <Label htmlFor="description">
+                      プロジェクト説明（マークダウン形式）*
+                    </Label>
                     <Tabs defaultValue="edit" className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="edit">編集</TabsTrigger>
@@ -462,7 +533,12 @@ export default function ProjectsPage() {
                         <Textarea
                           id="description"
                           value={formData.description}
-                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              description: e.target.value,
+                            })
+                          }
                           placeholder="## 概要&#10;&#10;プロジェクトの概要をここに記載します。"
                           rows={8}
                           disabled={isLoading}
@@ -484,7 +560,9 @@ export default function ProjectsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="responsibilities">担当業務（マークダウン形式）</Label>
+                    <Label htmlFor="responsibilities">
+                      担当業務（マークダウン形式）
+                    </Label>
                     <Tabs defaultValue="edit" className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="edit">編集</TabsTrigger>
@@ -494,7 +572,12 @@ export default function ProjectsPage() {
                         <Textarea
                           id="responsibilities"
                           value={formData.responsibilities}
-                          onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              responsibilities: e.target.value,
+                            })
+                          }
                           placeholder="- フロントエンド開発（React, TypeScript）&#10;- API設計・実装&#10;- データベース設計"
                           rows={8}
                           disabled={isLoading}
@@ -504,7 +587,9 @@ export default function ProjectsPage() {
                       <TabsContent value="preview">
                         <div className="min-h-[200px] rounded-md border p-4 bg-background">
                           {formData.responsibilities ? (
-                            <MarkdownRenderer content={formData.responsibilities} />
+                            <MarkdownRenderer
+                              content={formData.responsibilities}
+                            />
                           ) : (
                             <p className="text-muted-foreground text-center py-8">
                               プレビューがここに表示されます
@@ -516,7 +601,9 @@ export default function ProjectsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="achievements">成果実績（マークダウン形式）</Label>
+                    <Label htmlFor="achievements">
+                      成果実績（マークダウン形式）
+                    </Label>
                     <Tabs defaultValue="edit" className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="edit">編集</TabsTrigger>
@@ -526,7 +613,12 @@ export default function ProjectsPage() {
                         <Textarea
                           id="achievements"
                           value={formData.achievements}
-                          onChange={(e) => setFormData({ ...formData, achievements: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              achievements: e.target.value,
+                            })
+                          }
                           placeholder="- ページ読み込み速度を50%改善&#10;- ユーザー満足度を30%向上&#10;- 開発効率を40%改善"
                           rows={8}
                           disabled={isLoading}
@@ -548,8 +640,12 @@ export default function ProjectsPage() {
                   </div>
 
                   <div className="flex gap-2 pt-4">
-                    <Button type="submit" disabled={isLoading} className="flex-1">
-                      {isLoading ? '保存中...' : '保存'}
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-1"
+                    >
+                      {isLoading ? "保存中..." : "保存"}
                     </Button>
                     <Button
                       type="button"
@@ -566,7 +662,7 @@ export default function ProjectsPage() {
                 </form>
               </DialogContent>
             </Dialog>
-            <Button onClick={() => router.push('/admin')} variant="outline">
+            <Button onClick={() => router.push("/admin")} variant="outline">
               ダッシュボードに戻る
             </Button>
           </div>
@@ -581,9 +677,18 @@ export default function ProjectsPage() {
             </Card>
           ) : (
             <>
-              <p className="text-sm text-muted-foreground">ドラッグして並び替えができます</p>
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={projects.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+              <p className="text-sm text-muted-foreground">
+                ドラッグして並び替えができます
+              </p>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={projects.map((p) => p.id)}
+                  strategy={verticalListSortingStrategy}
+                >
                   {projects.map((project) => (
                     <SortableProjectItem
                       key={project.id}

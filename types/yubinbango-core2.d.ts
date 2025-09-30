@@ -1,4 +1,4 @@
-declare module 'yubinbango-core2' {
+declare module "yubinbango-core2" {
   export default class YubinBango {
     static Core: new (
       postalCode: string,

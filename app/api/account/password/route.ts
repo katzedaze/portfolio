@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { account } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { auth } from '@/lib/auth';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { account } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { z } from "zod";
 
 const passwordChangeSchema = z.object({
-  currentPassword: z.string().min(1, '現在のパスワードを入力してください'),
-  newPassword: z.string().min(8, 'パスワードは8文字以上で設定してください'),
+  currentPassword: z.string().min(1, "現在のパスワードを入力してください"),
+  newPassword: z.string().min(8, "パスワードは8文字以上で設定してください"),
 });
 
 export async function POST(request: NextRequest) {
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -37,18 +37,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     } catch (authError) {
       return NextResponse.json(
-        { error: 'パスワードの更新に失敗しました' },
+        { error: "パスワードの更新に失敗しました" },
         { status: 400 }
       );
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation Error', details: error.issues },
+        { error: "Validation Error", details: error.issues },
         { status: 400 }
       );
     }
-    console.error('Password change error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Password change error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

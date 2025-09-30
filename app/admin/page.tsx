@@ -1,12 +1,27 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession, signOut } from '@/lib/auth-client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { User, Settings, Code, FileText, Briefcase, Building2, LogOut, ArrowRight } from 'lucide-react';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession, signOut } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  User,
+  Settings,
+  Code,
+  FileText,
+  Briefcase,
+  Building2,
+  LogOut,
+  ArrowRight,
+} from "lucide-react";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -14,7 +29,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!isPending && !session) {
-      router.push('/admin/login');
+      router.push("/admin/login");
     }
   }, [session, isPending, router]);
 
@@ -32,7 +47,7 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     await signOut();
-    router.push('/');
+    router.push("/");
   };
 
   return (
@@ -44,10 +59,16 @@ export default function AdminDashboard() {
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               管理ダッシュボード
             </h1>
-            <p className="text-muted-foreground mt-2">ポートフォリオの管理画面</p>
+            <p className="text-muted-foreground mt-2">
+              ポートフォリオの管理画面
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => router.push('/')} variant="outline" size="sm">
+            <Button
+              onClick={() => router.push("/")}
+              variant="outline"
+              size="sm"
+            >
               <ArrowRight className="h-4 w-4 mr-2" />
               公開ページを見る
             </Button>
@@ -69,10 +90,15 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <CardTitle className="mt-4">プロフィール管理</CardTitle>
-              <CardDescription>自己紹介とプロフィール情報を編集</CardDescription>
+              <CardDescription>
+                自己紹介とプロフィール情報を編集
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full group-hover:bg-primary/90" onClick={() => router.push('/admin/profile')}>
+              <Button
+                className="w-full group-hover:bg-primary/90"
+                onClick={() => router.push("/admin/profile")}
+              >
                 編集する
                 <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -87,10 +113,15 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <CardTitle className="mt-4">アカウント設定</CardTitle>
-              <CardDescription>メールアドレスとパスワードの変更</CardDescription>
+              <CardDescription>
+                メールアドレスとパスワードの変更
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full group-hover:bg-primary/90" onClick={() => router.push('/admin/account')}>
+              <Button
+                className="w-full group-hover:bg-primary/90"
+                onClick={() => router.push("/admin/account")}
+              >
                 設定する
                 <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -108,7 +139,10 @@ export default function AdminDashboard() {
               <CardDescription>技術スキルの追加・編集・削除</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full group-hover:bg-primary/90" onClick={() => router.push('/admin/skills')}>
+              <Button
+                className="w-full group-hover:bg-primary/90"
+                onClick={() => router.push("/admin/skills")}
+              >
                 管理する
                 <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -126,7 +160,10 @@ export default function AdminDashboard() {
               <CardDescription>自己PRを編集</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full group-hover:bg-primary/90" onClick={() => router.push('/admin/introduction')}>
+              <Button
+                className="w-full group-hover:bg-primary/90"
+                onClick={() => router.push("/admin/introduction")}
+              >
                 編集する
                 <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -144,7 +181,10 @@ export default function AdminDashboard() {
               <CardDescription>所属企業の追加・編集・削除</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full group-hover:bg-primary/90" onClick={() => router.push('/admin/companies')}>
+              <Button
+                className="w-full group-hover:bg-primary/90"
+                onClick={() => router.push("/admin/companies")}
+              >
                 管理する
                 <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -162,7 +202,10 @@ export default function AdminDashboard() {
               <CardDescription>職務経歴の追加・編集・削除</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full group-hover:bg-primary/90" onClick={() => router.push('/admin/projects')}>
+              <Button
+                className="w-full group-hover:bg-primary/90"
+                onClick={() => router.push("/admin/projects")}
+              >
                 管理する
                 <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -178,19 +221,39 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => router.push('/')}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/")}
+              >
                 公開ページを見る
               </Button>
-              <Button variant="outline" size="sm" onClick={() => router.push('/admin/profile')}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/admin/profile")}
+              >
                 プロフィール編集
               </Button>
-              <Button variant="outline" size="sm" onClick={() => router.push('/admin/skills')}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/admin/skills")}
+              >
                 スキル管理
               </Button>
-              <Button variant="outline" size="sm" onClick={() => router.push('/admin/companies')}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/admin/companies")}
+              >
                 企業管理
               </Button>
-              <Button variant="outline" size="sm" onClick={() => router.push('/admin/projects')}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/admin/projects")}
+              >
                 プロジェクト管理
               </Button>
             </div>

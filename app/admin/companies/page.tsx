@@ -1,20 +1,40 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from '@/lib/auth-client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { Pencil, Trash2, Plus, GripVertical, Building2, Calendar } from 'lucide-react';
-import { MarkdownRenderer } from '@/components/markdown-renderer';
-import { IndustryCombobox } from '@/components/industry-combobox';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  GripVertical,
+  Building2,
+  Calendar,
+} from "lucide-react";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { IndustryCombobox } from "@/components/industry-combobox";
 import {
   DndContext,
   closestCenter,
@@ -23,15 +43,15 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Company {
   id: string;
@@ -52,7 +72,14 @@ function SortableCompanyItem({
   onEdit: (company: Company) => void;
   onDelete: (id: string) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: company.id,
   });
 
@@ -64,9 +91,9 @@ function SortableCompanyItem({
 
   const formatDate = (date: Date | null) => {
     if (!date) return null;
-    return new Date(date).toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: 'long',
+    return new Date(date).toLocaleDateString("ja-JP", {
+      year: "numeric",
+      month: "long",
     });
   };
 
@@ -95,10 +122,18 @@ function SortableCompanyItem({
                 )}
               </div>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => onEdit(company)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onEdit(company)}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => onDelete(company.id)}>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => onDelete(company.id)}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -112,7 +147,8 @@ function SortableCompanyItem({
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>
-                {formatDate(company.joinDate) || '入社日未設定'} 〜 {formatDate(company.leaveDate) || '在籍中'}
+                {formatDate(company.joinDate) || "入社日未設定"} 〜{" "}
+                {formatDate(company.leaveDate) || "在籍中"}
               </span>
             </div>
           )}
@@ -137,11 +173,11 @@ export default function CompaniesPage() {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
 
   const [formData, setFormData] = useState({
-    name: '',
-    industry: '',
-    description: '',
-    joinDate: '',
-    leaveDate: '',
+    name: "",
+    industry: "",
+    description: "",
+    joinDate: "",
+    leaveDate: "",
     displayOrder: 0,
   });
 
@@ -154,7 +190,7 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     if (!isPending && !session) {
-      router.push('/admin/login');
+      router.push("/admin/login");
     }
   }, [session, isPending, router]);
 
@@ -166,13 +202,13 @@ export default function CompaniesPage() {
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch('/api/companies');
+      const response = await fetch("/api/companies");
       if (response.ok) {
         const data = await response.json();
         setCompanies(data);
       }
     } catch (error) {
-      console.error('Failed to fetch companies:', error);
+      console.error("Failed to fetch companies:", error);
     } finally {
       setIsFetching(false);
     }
@@ -193,22 +229,26 @@ export default function CompaniesPage() {
         await Promise.all(
           newCompanies.map((company, index) =>
             fetch(`/api/companies/${company.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 name: company.name,
                 industry: company.industry,
                 description: company.description,
-                joinDate: company.joinDate ? new Date(company.joinDate).toISOString().split('T')[0] : null,
-                leaveDate: company.leaveDate ? new Date(company.leaveDate).toISOString().split('T')[0] : null,
+                joinDate: company.joinDate
+                  ? new Date(company.joinDate).toISOString().split("T")[0]
+                  : null,
+                leaveDate: company.leaveDate
+                  ? new Date(company.leaveDate).toISOString().split("T")[0]
+                  : null,
                 displayOrder: index,
               }),
             })
           )
         );
       } catch (error) {
-        console.error('Failed to update display order:', error);
-        toast.error('表示順序の更新に失敗しました');
+        console.error("Failed to update display order:", error);
+        toast.error("表示順序の更新に失敗しました");
       }
     }
   };
@@ -218,24 +258,30 @@ export default function CompaniesPage() {
     setIsLoading(true);
 
     try {
-      const url = editingCompany ? `/api/companies/${editingCompany.id}` : '/api/companies';
-      const method = editingCompany ? 'PUT' : 'POST';
+      const url = editingCompany
+        ? `/api/companies/${editingCompany.id}`
+        : "/api/companies";
+      const method = editingCompany ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
           industry: formData.industry,
           description: formData.description,
           joinDate: formData.joinDate || null,
           leaveDate: formData.leaveDate || null,
-          displayOrder: editingCompany ? formData.displayOrder : companies.length,
+          displayOrder: editingCompany
+            ? formData.displayOrder
+            : companies.length,
         }),
       });
 
       if (response.ok) {
-        toast.success(editingCompany ? '企業情報を更新しました' : '企業を追加しました');
+        toast.success(
+          editingCompany ? "企業情報を更新しました" : "企業を追加しました"
+        );
         setIsDialogOpen(false);
         resetForm();
         fetchCompanies();
@@ -244,12 +290,12 @@ export default function CompaniesPage() {
         if (errorData.details) {
           toast.error(`入力エラー: ${errorData.details[0]?.message}`);
         } else {
-          toast.error('保存に失敗しました');
+          toast.error("保存に失敗しました");
         }
       }
     } catch (error) {
-      console.error('Save error:', error);
-      toast.error('保存に失敗しました');
+      console.error("Save error:", error);
+      toast.error("保存に失敗しました");
     } finally {
       setIsLoading(false);
     }
@@ -259,43 +305,52 @@ export default function CompaniesPage() {
     setEditingCompany(company);
     setFormData({
       name: company.name,
-      industry: company.industry || '',
-      description: company.description || '',
-      joinDate: company.joinDate ? new Date(company.joinDate).toISOString().split('T')[0] : '',
-      leaveDate: company.leaveDate ? new Date(company.leaveDate).toISOString().split('T')[0] : '',
+      industry: company.industry || "",
+      description: company.description || "",
+      joinDate: company.joinDate
+        ? new Date(company.joinDate).toISOString().split("T")[0]
+        : "",
+      leaveDate: company.leaveDate
+        ? new Date(company.leaveDate).toISOString().split("T")[0]
+        : "",
       displayOrder: company.displayOrder,
     });
     setIsDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('本当に削除しますか？この企業に紐付いているプロジェクトの企業情報もクリアされます。')) return;
+    if (
+      !confirm(
+        "本当に削除しますか？この企業に紐付いているプロジェクトの企業情報もクリアされます。"
+      )
+    )
+      return;
 
     try {
       const response = await fetch(`/api/companies/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (response.ok) {
-        toast.success('企業を削除しました');
+        toast.success("企業を削除しました");
         fetchCompanies();
       } else {
-        toast.error('削除に失敗しました');
+        toast.error("削除に失敗しました");
       }
     } catch (error) {
-      console.error('Delete error:', error);
-      toast.error('削除に失敗しました');
+      console.error("Delete error:", error);
+      toast.error("削除に失敗しました");
     }
   };
 
   const resetForm = () => {
     setEditingCompany(null);
     setFormData({
-      name: '',
-      industry: '',
-      description: '',
-      joinDate: '',
-      leaveDate: '',
+      name: "",
+      industry: "",
+      description: "",
+      joinDate: "",
+      leaveDate: "",
       displayOrder: 0,
     });
   };
@@ -318,20 +373,31 @@ export default function CompaniesPage() {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">企業管理</h1>
-            <p className="text-muted-foreground mt-2">所属企業の情報を管理します</p>
+            <p className="text-muted-foreground mt-2">
+              所属企業の情報を管理します
+            </p>
           </div>
           <div className="flex gap-2">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
+                <Button
+                  onClick={() => {
+                    resetForm();
+                    setIsDialogOpen(true);
+                  }}
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   新規追加
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>{editingCompany ? '企業情報編集' : '企業追加'}</DialogTitle>
-                  <DialogDescription>企業情報を入力してください</DialogDescription>
+                  <DialogTitle>
+                    {editingCompany ? "企業情報編集" : "企業追加"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    企業情報を入力してください
+                  </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
@@ -339,7 +405,9 @@ export default function CompaniesPage() {
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                       required
                       disabled={isLoading}
                       placeholder="例: 株式会社○○"
@@ -350,7 +418,9 @@ export default function CompaniesPage() {
                     <Label htmlFor="industry">業界</Label>
                     <IndustryCombobox
                       value={formData.industry}
-                      onChange={(value) => setFormData({ ...formData, industry: value })}
+                      onChange={(value) =>
+                        setFormData({ ...formData, industry: value })
+                      }
                       disabled={isLoading}
                     />
                   </div>
@@ -362,7 +432,9 @@ export default function CompaniesPage() {
                         id="joinDate"
                         type="date"
                         value={formData.joinDate}
-                        onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, joinDate: e.target.value })
+                        }
                         disabled={isLoading}
                       />
                     </div>
@@ -373,15 +445,24 @@ export default function CompaniesPage() {
                         id="leaveDate"
                         type="date"
                         value={formData.leaveDate}
-                        onChange={(e) => setFormData({ ...formData, leaveDate: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            leaveDate: e.target.value,
+                          })
+                        }
                         disabled={isLoading}
                       />
-                      <p className="text-xs text-muted-foreground">在籍中の場合は空欄にしてください</p>
+                      <p className="text-xs text-muted-foreground">
+                        在籍中の場合は空欄にしてください
+                      </p>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">会社概要（マークダウン形式）</Label>
+                    <Label htmlFor="description">
+                      会社概要（マークダウン形式）
+                    </Label>
                     <Tabs defaultValue="edit" className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="edit">編集</TabsTrigger>
@@ -391,7 +472,12 @@ export default function CompaniesPage() {
                         <Textarea
                           id="description"
                           value={formData.description}
-                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              description: e.target.value,
+                            })
+                          }
                           placeholder="## 会社概要&#10;&#10;主要事業内容や特徴などを記載します。"
                           rows={10}
                           disabled={isLoading}
@@ -413,8 +499,12 @@ export default function CompaniesPage() {
                   </div>
 
                   <div className="flex gap-2 pt-4">
-                    <Button type="submit" disabled={isLoading} className="flex-1">
-                      {isLoading ? '保存中...' : '保存'}
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-1"
+                    >
+                      {isLoading ? "保存中..." : "保存"}
                     </Button>
                     <Button
                       type="button"
@@ -431,7 +521,7 @@ export default function CompaniesPage() {
                 </form>
               </DialogContent>
             </Dialog>
-            <Button onClick={() => router.push('/admin')} variant="outline">
+            <Button onClick={() => router.push("/admin")} variant="outline">
               ダッシュボードに戻る
             </Button>
           </div>
@@ -456,7 +546,10 @@ export default function CompaniesPage() {
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
                 >
-                  <SortableContext items={companies.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                  <SortableContext
+                    items={companies.map((c) => c.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
                     {companies.map((company) => (
                       <SortableCompanyItem
                         key={company.id}

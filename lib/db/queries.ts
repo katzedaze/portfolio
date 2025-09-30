@@ -1,6 +1,6 @@
-import { db } from './index';
-import { profile, skill, introduction, project, company } from './schema';
-import { eq, desc } from 'drizzle-orm';
+import { db } from "./index";
+import { profile, skill, introduction, project, company } from "./schema";
+import { eq, desc } from "drizzle-orm";
 
 // プロフィール取得
 export async function getProfile(userId: string) {
@@ -18,21 +18,26 @@ export async function getPublicProfile() {
 
 // スキル一覧取得（カテゴリ別）
 export async function getSkillsByCategory() {
-  const skills = await db.select().from(skill).orderBy(skill.displayOrder, skill.name);
+  const skills = await db
+    .select()
+    .from(skill)
+    .orderBy(skill.displayOrder, skill.name);
 
   // 経験年数を0.1刻みに変換し、カテゴリごとにグループ化
-  const formattedSkills = skills.map((s) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const formattedSkills = skills.map((s: any) => ({
     ...s,
     yearsOfExperience: s.yearsOfExperience / 10,
   }));
 
-  const grouped = formattedSkills.reduce((acc, s) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const grouped = formattedSkills.reduce((acc: any, s: any) => {
     if (!acc[s.category]) {
       acc[s.category] = [];
     }
     acc[s.category].push(s);
     return acc;
-  }, {} as Record<string, typeof formattedSkills>);
+  }, {} as Record<string, any>);
 
   return grouped;
 }
@@ -44,7 +49,10 @@ export async function getAllSkills() {
 
 // 自己PR取得（複数）
 export async function getIntroductions() {
-  return await db.select().from(introduction).orderBy(introduction.displayOrder);
+  return await db
+    .select()
+    .from(introduction)
+    .orderBy(introduction.displayOrder);
 }
 
 // プロジェクト一覧取得（新しい順、企業情報も含む）
@@ -58,7 +66,8 @@ export async function getProjects() {
     .leftJoin(company, eq(project.companyId, company.id))
     .orderBy(project.displayOrder, desc(project.startDate));
 
-  return projects.map((row) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return projects.map((row: any) => ({
     ...row.project,
     company: row.company,
   }));

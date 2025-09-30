@@ -6,7 +6,12 @@
 
 - **Frontend**: Next.js 15.5.4 (App Router), React 19, TypeScript
 - **Backend**: Next.js API Routes
-- **Database**: PostgreSQL with Drizzle ORM
+- **Database**:
+  - 開発環境: PostgreSQL (Docker) + node-postgres
+  - 本番環境: Neon Database + @neondatabase/serverless
+- **Storage**:
+  - 開発環境: ローカルファイルシステム (`public/uploads/`)
+  - 本番環境: Vercel Blob Storage
 - **Authentication**: Better Auth 1.3.23
 - **UI**: Shadcn/ui (Tailwind CSS)
 - **Additional**: react-markdown, @dnd-kit (drag & drop)
@@ -29,15 +34,41 @@
 - 自己PR
 - 職務経歴（企業・プロジェクト情報）
 
+## 環境構成
+
+このプロジェクトは開発環境と本番環境で異なる構成を使用します：
+
+### 開発環境
+
+- **データベース**: Docker Compose で起動する PostgreSQL (localhost:5432)
+- **ストレージ**: ローカルファイルシステム (`public/uploads/`)
+- **環境変数**: `.env` ファイル
+- **NODE_ENV**: `development`
+
+### 本番環境 (Vercel)
+
+- **データベース**: Neon Database (Serverless PostgreSQL)
+- **ストレージ**: Vercel Blob Storage
+- **環境変数**: Vercel Environment Variables
+- **NODE_ENV**: `production`
+
 ## セットアップ
 
 ### 必要な環境
+
+#### 開発環境
 
 - Node.js 18以上
 - Docker & Docker Compose
 - npm or yarn
 
-### 初回セットアップ
+#### 本番環境
+
+- Vercel CLI
+- Neon Database アカウント
+- Vercel アカウント
+
+### 開発環境のセットアップ
 
 1. **リポジトリをクローン**
 
@@ -59,12 +90,18 @@ make install
 `.env`ファイルを作成し、以下の環境変数を設定：
 
 ```bash
-# Database
+# Database (ローカルPostgreSQL)
 DATABASE_URL="postgresql://postgres:mypassword@localhost:5432/portfolio_dev"
 
 # Better Auth
-BETTER_AUTH_SECRET="your-secret-key-here"
+BETTER_AUTH_SECRET="dev_secret_key_change_in_production"
 BETTER_AUTH_URL="http://localhost:3000"
+
+# Node Environment (開発環境)
+NODE_ENV="development"
+
+# 注意: BLOB_READ_WRITE_TOKEN は開発環境では不要
+# 開発環境では画像を public/uploads/ に保存します
 ```
 
 4. **PostgreSQLコンテナを起動**
@@ -107,6 +144,61 @@ make dev
 ```
 
 アプリケーションが <http://localhost:3000> で起動します。
+
+管理画面: <http://localhost:3000/admin/login>
+初期アカウント: `admin@example.com` / `admin123`
+
+### 本番環境のセットアップ (Vercel)
+
+#### 1. Neon Database のセットアップ
+
+1. [Neon Console](https://console.neon.tech) にアクセス
+2. 新しいプロジェクトを作成（例: `portfolio-db`）
+3. 接続文字列をコピー（`postgresql://user:password@host/dbname`）
+
+#### 2. Vercel Blob Storage のセットアップ
+
+1. [Vercel Dashboard](https://vercel.com/dashboard/stores) にアクセス
+2. "Create Database" → "Blob" を選択
+3. プロジェクトに接続
+4. `BLOB_READ_WRITE_TOKEN` が自動的に環境変数に追加されます
+
+#### 3. Vercelにデプロイ
+
+```bash
+# Vercel CLIでログイン
+vercel login
+
+# 環境変数を設定
+printf "your-random-secret-32chars-or-more" | vercel env add BETTER_AUTH_SECRET production
+printf "https://your-app.vercel.app" | vercel env add BETTER_AUTH_URL production
+printf "postgresql://user:pass@host/db" | vercel env add DATABASE_URL production
+
+# デプロイ
+vercel --prod
+```
+
+⚠️ **重要**: 環境変数は `printf` を使用してください（`echo` は改行文字を含むためエラーの原因になります）
+
+#### 4. データベーススキーマを適用
+
+```bash
+# 本番環境のDATABASE_URLを使用してスキーマを適用
+DATABASE_URL="postgresql://..." npm run db:push
+```
+
+#### 5. 管理者アカウントを作成
+
+```bash
+# Better Auth APIで管理者アカウントを作成
+curl -X POST https://your-app.vercel.app/api/auth/sign-up/email \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"your-secure-password","name":"Admin"}'
+```
+
+#### 6. 動作確認
+
+`https://your-app.vercel.app/admin/login` にアクセスしてログインテスト
 
 ## Makeコマンド
 
@@ -155,7 +247,7 @@ npm run db:seed
 
 ## プロジェクト構成
 
-```
+```text
 portfolio/
 ├── app/                    # Next.js App Router
 │   ├── admin/             # 管理画面ページ
@@ -199,23 +291,86 @@ Better Authを使用したメール/パスワード認証:
 
 管理画面（`/admin`）は認証必須です。
 
-## デプロイ
+## トラブルシューティング
 
-### Vercel（推奨）
+### 開発環境
 
-1. Vercelにプロジェクトをインポート
-2. 環境変数を設定（`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`）
-3. PostgreSQLデータベースを接続（Vercel Postgres、Supabase等）
-4. デプロイ後、シードコマンドでデータ投入
+**データベース接続エラー**
 
-### その他のプラットフォーム
+```bash
+# Dockerコンテナが起動しているか確認
+docker ps
 
-Next.js 15対応のホスティングサービスであれば動作します：
+# コンテナを再起動
+make restart
+# または
+docker-compose restart
 
-- Railway
-- Render
-- AWS (Amplify, ECS)
-- Google Cloud Run
+# .envファイルのDATABASE_URLを確認
+cat .env | grep DATABASE_URL
+# localhostが含まれていれば自動的にnode-postgresが使用されます
+```
+
+**CORSエラー / ログインできない**
+
+- `.env` ファイルの `DATABASE_URL` に `localhost` が含まれているか確認
+- 開発サーバーを再起動: `npm run dev` または `make dev`
+- データベース接続判定は `DATABASE_URL` の内容で自動的に行われます
+
+**画像アップロードエラー**
+
+- 開発環境では `public/uploads/` ディレクトリに保存されます
+- ディレクトリは自動作成されますが、権限エラーが出る場合は手動で作成してください
+
+### 本番環境 (Vercel)
+
+**ログインエラー**
+
+```bash
+# Vercelのログを確認
+vercel logs --follow
+
+# 環境変数を確認
+vercel env ls
+```
+
+**パスワードハッシュエラー**
+
+```bash
+# 管理者アカウントをリセット
+curl -X POST https://your-app.vercel.app/api/reset-admin
+
+# 新しいアカウントを作成
+curl -X POST https://your-app.vercel.app/api/auth/sign-up/email \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"your-secure-password","name":"Admin"}'
+```
+
+**画像が表示されない**
+
+- Vercel Blob Storageが正しく接続されているか確認
+- `BLOB_READ_WRITE_TOKEN` 環境変数が設定されているか確認
+- `next.config.ts` の `remotePatterns` 設定を確認
+
+## アーキテクチャの詳細
+
+### 環境別の動作
+
+このプロジェクトは環境変数で動作を自動的に切り替えます：
+
+**データベース接続 (`lib/db/index.ts`)**
+
+- 判定方法: `DATABASE_URL` に `localhost` が含まれているか、または `NODE_ENV` が `development`
+- **開発環境**: node-postgres (Pool) でローカルPostgreSQLに接続
+- **本番環境**: @neondatabase/serverless (neon-http) でNeon Databaseに接続
+
+**画像アップロード (`app/api/upload/route.ts`)**
+
+- 判定方法: `NODE_ENV` が `development` かどうか
+- **開発環境**: ファイルシステム (`public/uploads/`) に保存
+- **本番環境**: Vercel Blob Storage に保存
+
+この仕組みにより、`.env` ファイルの `DATABASE_URL` を変更するだけで適切なドライバが自動選択されます。
 
 ## ライセンス
 

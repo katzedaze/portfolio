@@ -1,18 +1,31 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from '@/lib/auth-client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { Pencil, Trash2, Plus, GripVertical } from 'lucide-react';
-import { MarkdownRenderer } from '@/components/markdown-renderer';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { Pencil, Trash2, Plus, GripVertical } from "lucide-react";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 import {
   DndContext,
   closestCenter,
@@ -21,15 +34,15 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Introduction {
   id: string;
@@ -47,7 +60,14 @@ function SortableIntroductionItem({
   onEdit: (intro: Introduction) => void;
   onDelete: (id: string) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: intro.id,
   });
 
@@ -80,7 +100,11 @@ function SortableIntroductionItem({
         <Button size="sm" variant="outline" onClick={() => onEdit(intro)}>
           <Pencil className="h-4 w-4" />
         </Button>
-        <Button size="sm" variant="destructive" onClick={() => onDelete(intro.id)}>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => onDelete(intro.id)}
+        >
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
@@ -98,8 +122,8 @@ export default function IntroductionPage() {
   const [editingIntro, setEditingIntro] = useState<Introduction | null>(null);
 
   const [formData, setFormData] = useState({
-    title: '',
-    content: '',
+    title: "",
+    content: "",
     displayOrder: 0,
   });
 
@@ -112,7 +136,7 @@ export default function IntroductionPage() {
 
   useEffect(() => {
     if (!isPending && !session) {
-      router.push('/admin/login');
+      router.push("/admin/login");
     }
   }, [session, isPending, router]);
 
@@ -124,13 +148,13 @@ export default function IntroductionPage() {
 
   const fetchIntroductions = async () => {
     try {
-      const response = await fetch('/api/introduction');
+      const response = await fetch("/api/introduction");
       if (response.ok) {
         const data = await response.json();
         setIntroductions(data);
       }
     } catch (error) {
-      console.error('Failed to fetch introductions:', error);
+      console.error("Failed to fetch introductions:", error);
     } finally {
       setIsFetching(false);
     }
@@ -150,8 +174,8 @@ export default function IntroductionPage() {
       try {
         const updatePromises = newIntroductions.map((intro, index) =>
           fetch(`/api/introduction/${intro.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               title: intro.title,
               content: intro.content,
@@ -161,10 +185,10 @@ export default function IntroductionPage() {
         );
 
         await Promise.all(updatePromises);
-        toast.success('表示順序を更新しました');
+        toast.success("表示順序を更新しました");
       } catch (error) {
-        console.error('Failed to update order:', error);
-        toast.error('表示順序の更新に失敗しました');
+        console.error("Failed to update order:", error);
+        toast.error("表示順序の更新に失敗しました");
         fetchIntroductions(); // Revert on error
       }
     }
@@ -175,20 +199,26 @@ export default function IntroductionPage() {
     setIsLoading(true);
 
     try {
-      const url = editingIntro ? `/api/introduction/${editingIntro.id}` : '/api/introduction';
-      const method = editingIntro ? 'PUT' : 'POST';
+      const url = editingIntro
+        ? `/api/introduction/${editingIntro.id}`
+        : "/api/introduction";
+      const method = editingIntro ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          displayOrder: editingIntro ? formData.displayOrder : introductions.length,
+          displayOrder: editingIntro
+            ? formData.displayOrder
+            : introductions.length,
         }),
       });
 
       if (response.ok) {
-        toast.success(editingIntro ? '自己PRを更新しました' : '自己PRを追加しました');
+        toast.success(
+          editingIntro ? "自己PRを更新しました" : "自己PRを追加しました"
+        );
         setIsDialogOpen(false);
         resetForm();
         fetchIntroductions();
@@ -197,12 +227,12 @@ export default function IntroductionPage() {
         if (errorData.details) {
           toast.error(`入力エラー: ${errorData.details[0]?.message}`);
         } else {
-          toast.error('保存に失敗しました');
+          toast.error("保存に失敗しました");
         }
       }
     } catch (error) {
-      console.error('Save error:', error);
-      toast.error('保存に失敗しました');
+      console.error("Save error:", error);
+      toast.error("保存に失敗しました");
     } finally {
       setIsLoading(false);
     }
@@ -219,30 +249,30 @@ export default function IntroductionPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('本当に削除しますか？')) return;
+    if (!confirm("本当に削除しますか？")) return;
 
     try {
       const response = await fetch(`/api/introduction/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (response.ok) {
-        toast.success('自己PRを削除しました');
+        toast.success("自己PRを削除しました");
         fetchIntroductions();
       } else {
-        toast.error('削除に失敗しました');
+        toast.error("削除に失敗しました");
       }
     } catch (error) {
-      console.error('Delete error:', error);
-      toast.error('削除に失敗しました');
+      console.error("Delete error:", error);
+      toast.error("削除に失敗しました");
     }
   };
 
   const resetForm = () => {
     setEditingIntro(null);
     setFormData({
-      title: '',
-      content: '',
+      title: "",
+      content: "",
       displayOrder: 0,
     });
   };
@@ -280,8 +310,12 @@ export default function IntroductionPage() {
               </DialogTrigger>
               <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>{editingIntro ? '自己PR編集' : '自己PR追加'}</DialogTitle>
-                  <DialogDescription>自己PR情報を入力してください</DialogDescription>
+                  <DialogTitle>
+                    {editingIntro ? "自己PR編集" : "自己PR追加"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    自己PR情報を入力してください
+                  </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
@@ -289,7 +323,9 @@ export default function IntroductionPage() {
                     <Input
                       id="title"
                       value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
                       required
                       disabled={isLoading}
                       placeholder="例: 技術への探求心と実装力"
@@ -307,7 +343,12 @@ export default function IntroductionPage() {
                         <Textarea
                           id="content"
                           value={formData.content}
-                          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              content: e.target.value,
+                            })
+                          }
                           required
                           disabled={isLoading}
                           placeholder="# 見出し&#10;&#10;内容をMarkdown形式で入力してください。"
@@ -330,8 +371,12 @@ export default function IntroductionPage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button type="submit" disabled={isLoading} className="flex-1">
-                      {isLoading ? '保存中...' : '保存'}
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-1"
+                    >
+                      {isLoading ? "保存中..." : "保存"}
                     </Button>
                     <Button
                       type="button"
@@ -348,7 +393,7 @@ export default function IntroductionPage() {
                 </form>
               </DialogContent>
             </Dialog>
-            <Button onClick={() => router.push('/admin')} variant="outline">
+            <Button onClick={() => router.push("/admin")} variant="outline">
               ダッシュボードに戻る
             </Button>
           </div>
@@ -361,7 +406,9 @@ export default function IntroductionPage() {
           </CardHeader>
           <CardContent>
             {introductions.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">自己PRが登録されていません</p>
+              <p className="text-center text-muted-foreground py-8">
+                自己PRが登録されていません
+              </p>
             ) : (
               <div className="space-y-2">
                 <DndContext
@@ -369,7 +416,10 @@ export default function IntroductionPage() {
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
                 >
-                  <SortableContext items={introductions.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                  <SortableContext
+                    items={introductions.map((i) => i.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
                     {introductions.map((intro) => (
                       <SortableIntroductionItem
                         key={intro.id}

@@ -1,8 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
-import { auth } from '@/lib/auth';
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,21 +8,29 @@ export async function POST(request: NextRequest) {
     });
 
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+    ];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: '画像ファイル（JPEG, PNG, WebP, GIF）のみアップロード可能です' },
+        {
+          error: "画像ファイル（JPEG, PNG, WebP, GIF）のみアップロード可能です",
+        },
         { status: 400 }
       );
     }
@@ -33,32 +38,56 @@ export async function POST(request: NextRequest) {
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      return NextResponse.json({ error: 'ファイルサイズは5MB以下にしてください' }, { status: 400 });
+      return NextResponse.json(
+        { error: "ファイルサイズは5MB以下にしてください" },
+        { status: 400 }
+      );
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const isDevelopment = process.env.NODE_ENV === "development";
 
     // Generate unique filename
     const timestamp = Date.now();
-    const ext = file.name.split('.').pop();
+    const ext = file.name.split(".").pop();
     const filename = `avatar-${timestamp}.${ext}`;
 
-    // Ensure upload directory exists
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
+    if (isDevelopment) {
+      // 開発環境: ローカルファイルシステムに保存
+      const { writeFile, mkdir } = await import("fs/promises");
+      const { join } = await import("path");
+      const { existsSync } = await import("fs");
+
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      // Ensure upload directory exists
+      const uploadDir = join(process.cwd(), "public", "uploads");
+      if (!existsSync(uploadDir)) {
+        await mkdir(uploadDir, { recursive: true });
+      }
+
+      // Save file
+      const filepath = join(uploadDir, filename);
+      await writeFile(filepath, buffer);
+
+      // Return public URL
+      const url = `/uploads/${filename}`;
+      return NextResponse.json({ url });
+    } else {
+      // 本番環境: Vercel Blobに保存
+      const { put } = await import("@vercel/blob");
+
+      const blob = await put(`avatars/${filename}`, file, {
+        access: "public",
+      });
+
+      return NextResponse.json({ url: blob.url });
     }
-
-    // Save file
-    const filepath = join(uploadDir, filename);
-    await writeFile(filepath, buffer);
-
-    // Return public URL
-    const url = `/uploads/${filename}`;
-    return NextResponse.json({ url });
   } catch (error) {
-    console.error('Upload error:', error);
-    return NextResponse.json({ error: 'アップロードに失敗しました' }, { status: 500 });
+    console.error("Upload error:", error);
+    return NextResponse.json(
+      { error: "アップロードに失敗しました" },
+      { status: 500 }
+    );
   }
 }

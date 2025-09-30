@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import * as React from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -11,26 +11,30 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const COMMON_INDUSTRIES = [
-  'IT・ソフトウェア',
-  'Web・インターネット',
-  'SIer',
-  'コンサルティング',
-  '金融・保険',
-  '製造業',
-  '通信・ネットワーク',
-  'メディア・広告',
-  'EC・通販',
-  '医療・ヘルスケア',
-  '教育・人材',
-  '小売・流通',
-  '不動産',
-  'ゲーム',
-  'エンターテイメント',
-  '官公庁・自治体',
+  "IT・ソフトウェア",
+  "Web・インターネット",
+  "SIer",
+  "コンサルティング",
+  "金融・保険",
+  "製造業",
+  "通信・ネットワーク",
+  "メディア・広告",
+  "EC・通販",
+  "医療・ヘルスケア",
+  "教育・人材",
+  "小売・流通",
+  "不動産",
+  "ゲーム",
+  "エンターテイメント",
+  "官公庁・自治体",
 ].sort();
 
 interface IndustryComboboxProps {
@@ -39,17 +43,21 @@ interface IndustryComboboxProps {
   disabled?: boolean;
 }
 
-export function IndustryCombobox({ value, onChange, disabled }: IndustryComboboxProps) {
+export function IndustryCombobox({
+  value,
+  onChange,
+  disabled,
+}: IndustryComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchValue, setSearchValue] = React.useState("");
 
   const handleSelect = (currentValue: string) => {
     onChange(currentValue);
     setOpen(false);
-    setSearchValue('');
+    setSearchValue("");
   };
 
-  const displayValue = value || '業界を選択';
+  const displayValue = value || "業界を選択";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -83,11 +91,15 @@ export function IndustryCombobox({ value, onChange, disabled }: IndustryCombobox
             </CommandEmpty>
             <CommandGroup>
               {COMMON_INDUSTRIES.map((industry) => (
-                <CommandItem key={industry} value={industry} onSelect={handleSelect}>
+                <CommandItem
+                  key={industry}
+                  value={industry}
+                  onSelect={handleSelect}
+                >
                   <Check
                     className={cn(
-                      'mr-2 h-4 w-4',
-                      value === industry ? 'opacity-100' : 'opacity-0'
+                      "mr-2 h-4 w-4",
+                      value === industry ? "opacity-100" : "opacity-0"
                     )}
                   />
                   {industry}
