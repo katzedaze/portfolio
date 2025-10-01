@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,8 +17,8 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 export default function AccountPage() {
+  const { session, isPending } = useRequireAuth();
   const router = useRouter();
-  const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(false);
 
   // Email change
@@ -29,12 +29,6 @@ export default function AccountPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/admin/login");
-    }
-  }, [session, isPending, router]);
 
   useEffect(() => {
     if (session?.user?.email) {

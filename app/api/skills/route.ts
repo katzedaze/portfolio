@@ -1,67 +1,45 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { skill } from "@/lib/db/schema";
-import { auth } from "@/lib/auth";
 import { skillSchema } from "@/lib/validations";
-import { ZodError } from "zod";
+import {
+  withErrorHandling,
+  withAuth,
+  validateRequest,
+} from "@/lib/api-helpers";
+import type { SkillResponse } from "@/lib/db/types";
 
-export async function GET() {
-  try {
-    const skills = await db
-      .select()
-      .from(skill)
-      .orderBy(skill.displayOrder, skill.name);
-    // 経験年数を0.1刻みに変換（DBには10倍した整数で保存されている）
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const formattedSkills = skills.map((s: any) => ({
-      ...s,
-      yearsOfExperience: s.yearsOfExperience / 10,
-    }));
-    return NextResponse.json(formattedSkills);
-  } catch (error) {
-    console.error("Skills GET error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
+/**
+ * GET /api/skills
+ * すべてのスキルを取得（認証不要）
+ */
+export const GET = withErrorHandling(async (): Promise<SkillResponse[]> => {
+  const skills = await db
+    .select()
+    .from(skill)
+    .orderBy(skill.displayOrder, skill.name);
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+  // 経験年数を0.1刻みに変換（DBには10倍した整数で保存されている）
+  return skills.map((s: typeof skill.$inferSelect) => ({
+    ...s,
+    yearsOfExperience: s.yearsOfExperience / 10,
+  }));
+}, "Skills GET");
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+/**
+ * POST /api/skills
+ * 新しいスキルを作成（認証必要）
+ */
+export const POST = withAuth(async (request: NextRequest) => {
+  const validatedData = await validateRequest(request, skillSchema);
 
-    const body = await request.json();
+  await db.insert(skill).values({
+    name: validatedData.name,
+    category: validatedData.category,
+    proficiency: validatedData.proficiency,
+    yearsOfExperience: Math.round(validatedData.yearsOfExperience * 10), // 0.1刻みを整数化して保存
+    displayOrder: validatedData.displayOrder,
+  });
 
-    // バリデーション
-    const validatedData = skillSchema.parse(body);
-
-    await db.insert(skill).values({
-      name: validatedData.name,
-      category: validatedData.category,
-      proficiency: validatedData.proficiency,
-      yearsOfExperience: Math.round(validatedData.yearsOfExperience * 10), // 0.1刻みを整数化して保存
-      displayOrder: validatedData.displayOrder,
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Validation Error", details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error("Skills POST error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
+  return { success: true };
+}, "Skills POST");

@@ -1,29 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { skill } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
 import { skillSchema } from "@/lib/validations";
-import { ZodError } from "zod";
+import { withAuth, validateRequest } from "@/lib/api-helpers";
 
+/**
+ * PUT /api/skills/[id]
+ * スキルを更新（認証必要）
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+  return withAuth(async () => {
     const { id } = await params;
-    const body = await request.json();
-
-    // バリデーション
-    const validatedData = skillSchema.parse(body);
+    const validatedData = await validateRequest(request, skillSchema);
 
     await db
       .update(skill)
@@ -37,44 +29,22 @@ export async function PUT(
       })
       .where(eq(skill.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Validation Error", details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error("Skills PUT error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
+    return { success: true };
+  }, "Skills PUT")(request);
 }
 
+/**
+ * DELETE /api/skills/[id]
+ * スキルを削除（認証必要）
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+  return withAuth(async () => {
     const { id } = await params;
     await db.delete(skill).where(eq(skill.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Skills DELETE error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
+    return { success: true };
+  }, "Skills DELETE")(request);
 }

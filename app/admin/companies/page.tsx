@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, memo } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { useRequireAuth } from "@/hooks/use-require-auth";
+import { useCrudModal } from "@/hooks/use-crud-modal";
+import { useSortableItems } from "@/hooks/use-sortable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +26,6 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
 import {
   Pencil,
   Trash2,
@@ -35,19 +36,9 @@ import {
 } from "lucide-react";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { IndustryCombobox } from "@/components/industry-combobox";
+import { DndContext } from "@dnd-kit/core";
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -63,7 +54,7 @@ interface Company {
   displayOrder: number;
 }
 
-function SortableCompanyItem({
+const SortableCompanyItem = memo(function SortableCompanyItem({
   company,
   onEdit,
   onDelete,
@@ -161,149 +152,47 @@ function SortableCompanyItem({
       )}
     </Card>
   );
-}
+});
+
+type CompanyFormData = {
+  name: string;
+  industry: string;
+  description: string;
+  joinDate: string;
+  leaveDate: string;
+  displayOrder: number;
+};
 
 export default function CompaniesPage() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const { session, isPending } = useRequireAuth();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    industry: "",
-    description: "",
-    joinDate: "",
-    leaveDate: "",
-    displayOrder: 0,
-  });
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/admin/login");
-    }
-  }, [session, isPending, router]);
-
-  useEffect(() => {
-    if (session) {
-      fetchCompanies();
-    }
-  }, [session]);
-
-  const fetchCompanies = async () => {
-    try {
-      const response = await fetch("/api/companies");
-      if (response.ok) {
-        const data = await response.json();
-        setCompanies(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch companies:", error);
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const oldIndex = companies.findIndex((c) => c.id === active.id);
-      const newIndex = companies.findIndex((c) => c.id === over.id);
-
-      const newCompanies = arrayMove(companies, oldIndex, newIndex);
-      setCompanies(newCompanies);
-
-      // Update display orders
-      try {
-        await Promise.all(
-          newCompanies.map((company, index) =>
-            fetch(`/api/companies/${company.id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                name: company.name,
-                industry: company.industry,
-                description: company.description,
-                joinDate: company.joinDate
-                  ? new Date(company.joinDate).toISOString().split("T")[0]
-                  : null,
-                leaveDate: company.leaveDate
-                  ? new Date(company.leaveDate).toISOString().split("T")[0]
-                  : null,
-                displayOrder: index,
-              }),
-            })
-          )
-        );
-      } catch (error) {
-        console.error("Failed to update display order:", error);
-        toast.error("表示順序の更新に失敗しました");
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const url = editingCompany
-        ? `/api/companies/${editingCompany.id}`
-        : "/api/companies";
-      const method = editingCompany ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          industry: formData.industry,
-          description: formData.description,
-          joinDate: formData.joinDate || null,
-          leaveDate: formData.leaveDate || null,
-          displayOrder: editingCompany
-            ? formData.displayOrder
-            : companies.length,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success(
-          editingCompany ? "企業情報を更新しました" : "企業を追加しました"
-        );
-        setIsDialogOpen(false);
-        resetForm();
-        fetchCompanies();
-      } else {
-        const errorData = await response.json();
-        if (errorData.details) {
-          toast.error(`入力エラー: ${errorData.details[0]?.message}`);
-        } else {
-          toast.error("保存に失敗しました");
-        }
-      }
-    } catch (error) {
-      console.error("Save error:", error);
-      toast.error("保存に失敗しました");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEdit = (company: Company) => {
-    setEditingCompany(company);
-    setFormData({
+  const {
+    items: companies,
+    setItems: setCompanies,
+    isLoading,
+    isFetching,
+    isDialogOpen,
+    setIsDialogOpen,
+    editingItem: editingCompany,
+    formData,
+    setFormData,
+    fetchItems: fetchCompanies,
+    handleSubmit,
+    handleEdit,
+    handleDelete,
+    resetForm,
+  } = useCrudModal<Company, CompanyFormData>({
+    apiPath: "/api/companies",
+    initialFormData: {
+      name: "",
+      industry: "",
+      description: "",
+      joinDate: "",
+      leaveDate: "",
+      displayOrder: 0,
+    },
+    mapItemToForm: (company) => ({
       name: company.name,
       industry: company.industry || "",
       description: company.description || "",
@@ -314,46 +203,48 @@ export default function CompaniesPage() {
         ? new Date(company.leaveDate).toISOString().split("T")[0]
         : "",
       displayOrder: company.displayOrder,
-    });
-    setIsDialogOpen(true);
-  };
+    }),
+    mapFormToPayload: (formData, isEditing, items) => ({
+      name: formData.name,
+      industry: formData.industry,
+      description: formData.description,
+      joinDate: formData.joinDate || null,
+      leaveDate: formData.leaveDate || null,
+      displayOrder: isEditing ? formData.displayOrder : items.length,
+    }),
+    messages: {
+      create: "企業を追加しました",
+      update: "企業情報を更新しました",
+      delete: "企業を削除しました",
+      deleteConfirm:
+        "本当に削除しますか？この企業に紐付いているプロジェクトの企業情報もクリアされます。",
+    },
+  });
 
-  const handleDelete = async (id: string) => {
-    if (
-      !confirm(
-        "本当に削除しますか？この企業に紐付いているプロジェクトの企業情報もクリアされます。"
-      )
-    )
-      return;
-
-    try {
-      const response = await fetch(`/api/companies/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        toast.success("企業を削除しました");
-        fetchCompanies();
-      } else {
-        toast.error("削除に失敗しました");
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast.error("削除に失敗しました");
+  useEffect(() => {
+    if (session) {
+      fetchCompanies();
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
-  const resetForm = () => {
-    setEditingCompany(null);
-    setFormData({
-      name: "",
-      industry: "",
-      description: "",
-      joinDate: "",
-      leaveDate: "",
-      displayOrder: 0,
-    });
-  };
+  const { sensors, handleDragEnd, closestCenter } = useSortableItems({
+    items: companies,
+    setItems: setCompanies,
+    updateUrl: "/api/companies/{id}",
+    getUpdateData: (company) => ({
+      name: company.name,
+      industry: company.industry,
+      description: company.description,
+      joinDate: company.joinDate
+        ? new Date(company.joinDate).toISOString().split("T")[0]
+        : null,
+      leaveDate: company.leaveDate
+        ? new Date(company.leaveDate).toISOString().split("T")[0]
+        : null,
+    }),
+    onError: fetchCompanies,
+  });
 
   if (isPending || isFetching) {
     return (

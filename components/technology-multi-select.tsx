@@ -33,13 +33,6 @@ export function TechnologyMultiSelect({
     onChange(value.filter((t) => t !== tech));
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAdd();
-    }
-  };
-
   return (
     <div className="space-y-3">
       <Label>使用技術</Label>

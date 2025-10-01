@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { useRequireAuth } from "@/hooks/use-require-auth";
+import { useCrudModal } from "@/hooks/use-crud-modal";
+import { useSortableItems } from "@/hooks/use-sortable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,23 +33,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
 import { Pencil, Trash2, Plus, GripVertical, Calendar } from "lucide-react";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { TechnologyMultiSelect } from "@/components/technology-multi-select";
+import { DndContext } from "@dnd-kit/core";
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -76,7 +67,7 @@ interface Project {
   displayOrder: number;
 }
 
-function SortableProjectItem({
+const SortableProjectItem = memo(function SortableProjectItem({
   project,
   companies,
   onEdit,
@@ -175,63 +166,84 @@ function SortableProjectItem({
       </CardContent>
     </Card>
   );
-}
+});
+
+type ProjectFormData = {
+  companyId: string | null;
+  title: string;
+  startDate: string;
+  endDate: string;
+  technologies: string[];
+  description: string;
+  responsibilities: string;
+  achievements: string;
+  displayOrder: number;
+};
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const { session, isPending } = useRequireAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
 
-  const [formData, setFormData] = useState({
-    companyId: null as string | null,
-    title: "",
-    startDate: "",
-    endDate: "",
-    technologies: [] as string[],
-    description: "",
-    responsibilities: "",
-    achievements: "",
-    displayOrder: 0,
+  const {
+    items: projects,
+    setItems: setProjects,
+    isLoading,
+    isFetching,
+    isDialogOpen,
+    setIsDialogOpen,
+    editingItem: editingProject,
+    formData,
+    setFormData,
+    fetchItems: fetchProjects,
+    handleSubmit,
+    handleEdit,
+    handleDelete,
+    resetForm,
+  } = useCrudModal<Project, ProjectFormData>({
+    apiPath: "/api/projects",
+    initialFormData: {
+      companyId: null,
+      title: "",
+      startDate: "",
+      endDate: "",
+      technologies: [],
+      description: "",
+      responsibilities: "",
+      achievements: "",
+      displayOrder: 0,
+    },
+    mapItemToForm: (project) => ({
+      companyId: project.companyId || null,
+      title: project.title,
+      startDate: new Date(project.startDate).toISOString().split("T")[0],
+      endDate: project.endDate
+        ? new Date(project.endDate).toISOString().split("T")[0]
+        : "",
+      technologies: project.technologies,
+      description: project.description,
+      responsibilities: project.responsibilities || "",
+      achievements: project.achievements || "",
+      displayOrder: project.displayOrder,
+    }),
+    mapFormToPayload: (formData, isEditing, items) => ({
+      companyId: formData.companyId || null,
+      title: formData.title,
+      startDate: formData.startDate,
+      endDate: formData.endDate || null,
+      technologies: formData.technologies,
+      description: formData.description,
+      responsibilities: formData.responsibilities,
+      achievements: formData.achievements,
+      displayOrder: isEditing ? formData.displayOrder : items.length,
+    }),
+    messages: {
+      create: "プロジェクトを追加しました",
+      update: "プロジェクトを更新しました",
+      delete: "プロジェクトを削除しました",
+      deleteConfirm: "本当に削除しますか？",
+    },
   });
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/admin/login");
-    }
-  }, [session, isPending, router]);
-
-  useEffect(() => {
-    if (session) {
-      fetchProjects();
-      fetchCompanies();
-    }
-  }, [session]);
-
-  const fetchProjects = async () => {
-    try {
-      const response = await fetch("/api/projects");
-      if (response.ok) {
-        const data = await response.json();
-        setProjects(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch projects:", error);
-    } finally {
-      setIsFetching(false);
-    }
-  };
 
   const fetchCompanies = async () => {
     try {
@@ -245,153 +257,32 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const oldIndex = projects.findIndex((p) => p.id === active.id);
-      const newIndex = projects.findIndex((p) => p.id === over.id);
-
-      const newProjects = arrayMove(projects, oldIndex, newIndex);
-      setProjects(newProjects);
-
-      // Update displayOrder for all affected projects
-      try {
-        const updatePromises = newProjects.map((proj, index) =>
-          fetch(`/api/projects/${proj.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              companyId: proj.companyId || null,
-              title: proj.title,
-              startDate: new Date(proj.startDate).toISOString().split("T")[0],
-              endDate: proj.endDate
-                ? new Date(proj.endDate).toISOString().split("T")[0]
-                : null,
-              technologies: proj.technologies,
-              description: proj.description,
-              responsibilities: proj.responsibilities || "",
-              achievements: proj.achievements || "",
-              displayOrder: index,
-            }),
-          })
-        );
-
-        await Promise.all(updatePromises);
-        toast.success("表示順序を更新しました");
-      } catch (error) {
-        console.error("Failed to update order:", error);
-        toast.error("表示順序の更新に失敗しました");
-        fetchProjects(); // Revert on error
-      }
+  useEffect(() => {
+    if (session) {
+      fetchProjects();
+      fetchCompanies();
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const url = editingProject
-        ? `/api/projects/${editingProject.id}`
-        : "/api/projects";
-      const method = editingProject ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companyId: formData.companyId || null,
-          title: formData.title,
-          startDate: formData.startDate,
-          endDate: formData.endDate || null,
-          technologies: formData.technologies,
-          description: formData.description,
-          responsibilities: formData.responsibilities,
-          achievements: formData.achievements,
-          displayOrder: editingProject
-            ? formData.displayOrder
-            : projects.length,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success(
-          editingProject
-            ? "プロジェクトを更新しました"
-            : "プロジェクトを追加しました"
-        );
-        setIsDialogOpen(false);
-        resetForm();
-        fetchProjects();
-      } else {
-        const errorData = await response.json();
-        if (errorData.details) {
-          toast.error(`入力エラー: ${errorData.details[0]?.message}`);
-        } else {
-          toast.error("保存に失敗しました");
-        }
-      }
-    } catch (error) {
-      console.error("Save error:", error);
-      toast.error("保存に失敗しました");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEdit = (project: Project) => {
-    setEditingProject(project);
-    setFormData({
+  const { sensors, handleDragEnd, closestCenter } = useSortableItems({
+    items: projects,
+    setItems: setProjects,
+    updateUrl: "/api/projects/{id}",
+    getUpdateData: (project) => ({
       companyId: project.companyId || null,
       title: project.title,
       startDate: new Date(project.startDate).toISOString().split("T")[0],
       endDate: project.endDate
         ? new Date(project.endDate).toISOString().split("T")[0]
-        : "",
+        : null,
       technologies: project.technologies,
       description: project.description,
       responsibilities: project.responsibilities || "",
       achievements: project.achievements || "",
-      displayOrder: project.displayOrder,
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("本当に削除しますか？")) return;
-
-    try {
-      const response = await fetch(`/api/projects/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        toast.success("プロジェクトを削除しました");
-        fetchProjects();
-      } else {
-        toast.error("削除に失敗しました");
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast.error("削除に失敗しました");
-    }
-  };
-
-  const resetForm = () => {
-    setEditingProject(null);
-    setFormData({
-      companyId: null,
-      title: "",
-      startDate: "",
-      endDate: "",
-      technologies: [],
-      description: "",
-      responsibilities: "",
-      achievements: "",
-      displayOrder: 0,
-    });
-  };
+    }),
+    onError: fetchProjects,
+  });
 
   if (isPending || isFetching) {
     return (

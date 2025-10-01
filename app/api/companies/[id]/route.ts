@@ -1,29 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { company } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
 import { companySchema } from "@/lib/validations";
-import { ZodError } from "zod";
+import { withAuth, validateRequest } from "@/lib/api-helpers";
 
+/**
+ * PUT /api/companies/[id]
+ * 企業情報を更新（認証必要）
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+  return withAuth(async () => {
     const { id } = await params;
-    const body = await request.json();
-
-    // バリデーション
-    const validatedData = companySchema.parse(body);
+    const validatedData = await validateRequest(request, companySchema);
 
     await db
       .update(company)
@@ -42,44 +34,22 @@ export async function PUT(
       })
       .where(eq(company.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Validation Error", details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error("Companies PUT error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
+    return { success: true };
+  }, "Companies PUT")(request);
 }
 
+/**
+ * DELETE /api/companies/[id]
+ * 企業を削除（認証必要）
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+  return withAuth(async () => {
     const { id } = await params;
     await db.delete(company).where(eq(company.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Companies DELETE error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
+    return { success: true };
+  }, "Companies DELETE")(request);
 }

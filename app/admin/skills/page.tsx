@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, memo } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { useRequireAuth } from "@/hooks/use-require-auth";
+import { useCrudModal } from "@/hooks/use-crud-modal";
+import { useSortableItems } from "@/hooks/use-sortable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,22 +31,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import { Pencil, Trash2, Plus, GripVertical } from "lucide-react";
 import { SkillCombobox } from "@/components/skill-combobox";
+import { DndContext } from "@dnd-kit/core";
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -66,7 +57,7 @@ const CATEGORIES = [
   { value: "others", label: "その他" },
 ];
 
-function SortableSkillItem({
+const SortableSkillItem = memo(function SortableSkillItem({
   skill,
   onEdit,
   onDelete,
@@ -138,178 +129,82 @@ function SortableSkillItem({
       </div>
     </div>
   );
-}
+});
+
+type SkillFormData = {
+  name: string;
+  category: string;
+  proficiency: string;
+  yearsOfExperience: number;
+  displayOrder: number;
+};
 
 export default function SkillsPage() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
+  const { session, isPending } = useRequireAuth();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    category: "frontend",
-    proficiency: "",
-    yearsOfExperience: 0,
-    displayOrder: 0,
-  });
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/admin/login");
-    }
-  }, [session, isPending, router]);
-
-  useEffect(() => {
-    if (session) {
-      fetchSkills();
-    }
-  }, [session]);
-
-  const fetchSkills = async () => {
-    try {
-      const response = await fetch("/api/skills");
-      if (response.ok) {
-        const data = await response.json();
-        setSkills(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch skills:", error);
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const oldIndex = skills.findIndex((s) => s.id === active.id);
-      const newIndex = skills.findIndex((s) => s.id === over.id);
-
-      const newSkills = arrayMove(skills, oldIndex, newIndex);
-      setSkills(newSkills);
-
-      // Update displayOrder for all affected skills
-      try {
-        const updatePromises = newSkills.map((skill, index) =>
-          fetch(`/api/skills/${skill.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: skill.name,
-              category: skill.category,
-              proficiency: skill.proficiency,
-              yearsOfExperience: skill.yearsOfExperience,
-              displayOrder: index,
-            }),
-          })
-        );
-
-        await Promise.all(updatePromises);
-        toast.success("表示順序を更新しました");
-      } catch (error) {
-        console.error("Failed to update order:", error);
-        toast.error("表示順序の更新に失敗しました");
-        fetchSkills(); // Revert on error
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const url = editingSkill
-        ? `/api/skills/${editingSkill.id}`
-        : "/api/skills";
-      const method = editingSkill ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          displayOrder: editingSkill ? formData.displayOrder : skills.length,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success(
-          editingSkill ? "スキルを更新しました" : "スキルを追加しました"
-        );
-        setIsDialogOpen(false);
-        resetForm();
-        fetchSkills();
-      } else {
-        const errorData = await response.json();
-        if (errorData.details) {
-          toast.error(`入力エラー: ${errorData.details[0]?.message}`);
-        } else {
-          toast.error("保存に失敗しました");
-        }
-      }
-    } catch (error) {
-      console.error("Save error:", error);
-      toast.error("保存に失敗しました");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEdit = (skill: Skill) => {
-    setEditingSkill(skill);
-    setFormData({
-      name: skill.name,
-      category: skill.category,
-      proficiency: skill.proficiency,
-      yearsOfExperience: skill.yearsOfExperience,
-      displayOrder: skill.displayOrder,
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("本当に削除しますか？")) return;
-
-    try {
-      const response = await fetch(`/api/skills/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        toast.success("スキルを削除しました");
-        fetchSkills();
-      } else {
-        toast.error("削除に失敗しました");
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast.error("削除に失敗しました");
-    }
-  };
-
-  const resetForm = () => {
-    setEditingSkill(null);
-    setFormData({
+  const {
+    items: skills,
+    setItems: setSkills,
+    isLoading,
+    isFetching,
+    isDialogOpen,
+    setIsDialogOpen,
+    editingItem: editingSkill,
+    formData,
+    setFormData,
+    fetchItems: fetchSkills,
+    handleSubmit,
+    handleEdit,
+    handleDelete,
+    resetForm,
+  } = useCrudModal<Skill, SkillFormData>({
+    apiPath: "/api/skills",
+    initialFormData: {
       name: "",
       category: "frontend",
       proficiency: "",
       yearsOfExperience: 0,
       displayOrder: 0,
-    });
-  };
+    },
+    mapItemToForm: (skill) => ({
+      name: skill.name,
+      category: skill.category,
+      proficiency: skill.proficiency,
+      yearsOfExperience: skill.yearsOfExperience,
+      displayOrder: skill.displayOrder,
+    }),
+    mapFormToPayload: (formData, isEditing, items) => ({
+      ...formData,
+      displayOrder: isEditing ? formData.displayOrder : items.length,
+    }),
+    messages: {
+      create: "スキルを追加しました",
+      update: "スキルを更新しました",
+      delete: "スキルを削除しました",
+      deleteConfirm: "本当に削除しますか？",
+    },
+  });
+
+  useEffect(() => {
+    if (session) {
+      fetchSkills();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  const { sensors, handleDragEnd, closestCenter } = useSortableItems({
+    items: skills,
+    setItems: setSkills,
+    updateUrl: "/api/skills/{id}",
+    getUpdateData: (skill) => ({
+      name: skill.name,
+      category: skill.category,
+      proficiency: skill.proficiency,
+      yearsOfExperience: skill.yearsOfExperience,
+    }),
+    onError: fetchSkills,
+  });
 
   if (isPending || isFetching) {
     return (

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useRequireAuth } from "@/hooks/use-require-auth";
+import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,14 +24,8 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
+  const { session, isPending } = useRequireAuth();
   const router = useRouter();
-  const { data: session, isPending } = useSession();
-
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/admin/login");
-    }
-  }, [session, isPending, router]);
 
   if (isPending) {
     return (

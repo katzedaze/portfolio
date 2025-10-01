@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,8 +23,8 @@ import { Upload, X, User } from "lucide-react";
 import { PostalCodeInput } from "@/components/postal-code-input";
 
 export default function ProfilePage() {
+  const { session, isPending } = useRequireAuth();
   const router = useRouter();
-  const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -40,12 +40,6 @@ export default function ProfilePage() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/admin/login");
-    }
-  }, [session, isPending, router]);
 
   useEffect(() => {
     if (session) {

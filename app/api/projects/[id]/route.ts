@@ -1,29 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { project } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
 import { projectSchema } from "@/lib/validations";
-import { ZodError } from "zod";
+import { withAuth, validateRequest } from "@/lib/api-helpers";
 
+/**
+ * PUT /api/projects/[id]
+ * プロジェクトを更新（認証必要）
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+  return withAuth(async () => {
     const { id } = await params;
-    const body = await request.json();
-
-    // バリデーション
-    const validatedData = projectSchema.parse(body);
+    const validatedData = await validateRequest(request, projectSchema);
 
     await db
       .update(project)
@@ -41,44 +33,22 @@ export async function PUT(
       })
       .where(eq(project.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Validation Error", details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error("Projects PUT error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
+    return { success: true };
+  }, "Projects PUT")(request);
 }
 
+/**
+ * DELETE /api/projects/[id]
+ * プロジェクトを削除（認証必要）
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+  return withAuth(async () => {
     const { id } = await params;
     await db.delete(project).where(eq(project.id, id));
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Projects DELETE error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
+    return { success: true };
+  }, "Projects DELETE")(request);
 }

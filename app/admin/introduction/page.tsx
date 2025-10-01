@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, memo } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { useRequireAuth } from "@/hooks/use-require-auth";
+import { useCrudModal } from "@/hooks/use-crud-modal";
+import { useSortableItems } from "@/hooks/use-sortable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,22 +25,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
 import { Pencil, Trash2, Plus, GripVertical } from "lucide-react";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { DndContext } from "@dnd-kit/core";
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -51,7 +42,7 @@ interface Introduction {
   displayOrder: number;
 }
 
-function SortableIntroductionItem({
+const SortableIntroductionItem = memo(function SortableIntroductionItem({
   intro,
   onEdit,
   onDelete,
@@ -110,172 +101,74 @@ function SortableIntroductionItem({
       </div>
     </div>
   );
-}
+});
+
+type IntroductionFormData = {
+  title: string;
+  content: string;
+  displayOrder: number;
+};
 
 export default function IntroductionPage() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
-  const [introductions, setIntroductions] = useState<Introduction[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingIntro, setEditingIntro] = useState<Introduction | null>(null);
+  const { session, isPending } = useRequireAuth();
 
-  const [formData, setFormData] = useState({
-    title: "",
-    content: "",
-    displayOrder: 0,
+  const {
+    items: introductions,
+    setItems: setIntroductions,
+    isLoading,
+    isFetching,
+    isDialogOpen,
+    setIsDialogOpen,
+    editingItem: editingIntro,
+    formData,
+    setFormData,
+    fetchItems: fetchIntroductions,
+    handleSubmit,
+    handleEdit,
+    handleDelete,
+    resetForm,
+  } = useCrudModal<Introduction, IntroductionFormData>({
+    apiPath: "/api/introduction",
+    initialFormData: {
+      title: "",
+      content: "",
+      displayOrder: 0,
+    },
+    mapItemToForm: (intro) => ({
+      title: intro.title,
+      content: intro.content,
+      displayOrder: intro.displayOrder,
+    }),
+    mapFormToPayload: (formData, isEditing, items) => ({
+      ...formData,
+      displayOrder: isEditing ? formData.displayOrder : items.length,
+    }),
+    messages: {
+      create: "自己PRを追加しました",
+      update: "自己PRを更新しました",
+      delete: "自己PRを削除しました",
+      deleteConfirm: "本当に削除しますか？",
+    },
   });
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/admin/login");
-    }
-  }, [session, isPending, router]);
 
   useEffect(() => {
     if (session) {
       fetchIntroductions();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
-  const fetchIntroductions = async () => {
-    try {
-      const response = await fetch("/api/introduction");
-      if (response.ok) {
-        const data = await response.json();
-        setIntroductions(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch introductions:", error);
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const oldIndex = introductions.findIndex((i) => i.id === active.id);
-      const newIndex = introductions.findIndex((i) => i.id === over.id);
-
-      const newIntroductions = arrayMove(introductions, oldIndex, newIndex);
-      setIntroductions(newIntroductions);
-
-      // Update displayOrder for all affected introductions
-      try {
-        const updatePromises = newIntroductions.map((intro, index) =>
-          fetch(`/api/introduction/${intro.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title: intro.title,
-              content: intro.content,
-              displayOrder: index,
-            }),
-          })
-        );
-
-        await Promise.all(updatePromises);
-        toast.success("表示順序を更新しました");
-      } catch (error) {
-        console.error("Failed to update order:", error);
-        toast.error("表示順序の更新に失敗しました");
-        fetchIntroductions(); // Revert on error
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const url = editingIntro
-        ? `/api/introduction/${editingIntro.id}`
-        : "/api/introduction";
-      const method = editingIntro ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          displayOrder: editingIntro
-            ? formData.displayOrder
-            : introductions.length,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success(
-          editingIntro ? "自己PRを更新しました" : "自己PRを追加しました"
-        );
-        setIsDialogOpen(false);
-        resetForm();
-        fetchIntroductions();
-      } else {
-        const errorData = await response.json();
-        if (errorData.details) {
-          toast.error(`入力エラー: ${errorData.details[0]?.message}`);
-        } else {
-          toast.error("保存に失敗しました");
-        }
-      }
-    } catch (error) {
-      console.error("Save error:", error);
-      toast.error("保存に失敗しました");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEdit = (intro: Introduction) => {
-    setEditingIntro(intro);
-    setFormData({
+  const { sensors, handleDragEnd, closestCenter } = useSortableItems({
+    items: introductions,
+    setItems: setIntroductions,
+    updateUrl: "/api/introduction/{id}",
+    getUpdateData: (intro) => ({
       title: intro.title,
       content: intro.content,
-      displayOrder: intro.displayOrder,
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("本当に削除しますか？")) return;
-
-    try {
-      const response = await fetch(`/api/introduction/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        toast.success("自己PRを削除しました");
-        fetchIntroductions();
-      } else {
-        toast.error("削除に失敗しました");
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast.error("削除に失敗しました");
-    }
-  };
-
-  const resetForm = () => {
-    setEditingIntro(null);
-    setFormData({
-      title: "",
-      content: "",
-      displayOrder: 0,
-    });
-  };
+    }),
+    onError: fetchIntroductions,
+  });
 
   if (isPending || isFetching) {
     return (

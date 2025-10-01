@@ -1,66 +1,44 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { company } from "@/lib/db/schema";
-import { auth } from "@/lib/auth";
 import { companySchema } from "@/lib/validations";
-import { ZodError } from "zod";
+import {
+  withErrorHandling,
+  withAuth,
+  validateRequest,
+} from "@/lib/api-helpers";
+import type { Company } from "@/lib/db/types";
 
-export async function GET() {
-  try {
-    const companies = await db
-      .select()
-      .from(company)
-      .orderBy(company.displayOrder, company.name);
-    return NextResponse.json(companies);
-  } catch (error) {
-    console.error("Companies GET error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
+/**
+ * GET /api/companies
+ * すべての企業を取得（認証不要）
+ */
+export const GET = withErrorHandling(async (): Promise<Company[]> => {
+  const companies = await db
+    .select()
+    .from(company)
+    .orderBy(company.displayOrder, company.name);
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+  return companies;
+}, "Companies GET");
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+/**
+ * POST /api/companies
+ * 新しい企業を作成（認証必要）
+ */
+export const POST = withAuth(async (request: NextRequest) => {
+  const validatedData = await validateRequest(request, companySchema);
 
-    const body = await request.json();
+  await db.insert(company).values({
+    name: validatedData.name,
+    industry: validatedData.industry || null,
+    description: validatedData.description || null,
+    joinDate: validatedData.joinDate ? new Date(validatedData.joinDate) : null,
+    leaveDate: validatedData.leaveDate
+      ? new Date(validatedData.leaveDate)
+      : null,
+    displayOrder: validatedData.displayOrder,
+  });
 
-    // バリデーション
-    const validatedData = companySchema.parse(body);
-
-    await db.insert(company).values({
-      name: validatedData.name,
-      industry: validatedData.industry || null,
-      description: validatedData.description || null,
-      joinDate: validatedData.joinDate
-        ? new Date(validatedData.joinDate)
-        : null,
-      leaveDate: validatedData.leaveDate
-        ? new Date(validatedData.leaveDate)
-        : null,
-      displayOrder: validatedData.displayOrder,
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Validation Error", details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error("Companies POST error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
+  return { success: true };
+}, "Companies POST");

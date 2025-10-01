@@ -1,66 +1,46 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { project } from "@/lib/db/schema";
 import { desc } from "drizzle-orm";
-import { auth } from "@/lib/auth";
 import { projectSchema } from "@/lib/validations";
-import { ZodError } from "zod";
+import {
+  withErrorHandling,
+  withAuth,
+  validateRequest,
+} from "@/lib/api-helpers";
+import type { Project } from "@/lib/db/types";
 
-export async function GET() {
-  try {
-    const projects = await db
-      .select()
-      .from(project)
-      .orderBy(project.displayOrder, desc(project.startDate));
-    return NextResponse.json(projects);
-  } catch (error) {
-    console.error("Projects GET error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
+/**
+ * GET /api/projects
+ * すべてのプロジェクトを取得（認証不要）
+ */
+export const GET = withErrorHandling(async (): Promise<Project[]> => {
+  const projects = await db
+    .select()
+    .from(project)
+    .orderBy(project.displayOrder, desc(project.startDate));
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+  return projects;
+}, "Projects GET");
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+/**
+ * POST /api/projects
+ * 新しいプロジェクトを作成（認証必要）
+ */
+export const POST = withAuth(async (request: NextRequest) => {
+  const validatedData = await validateRequest(request, projectSchema);
 
-    const body = await request.json();
+  await db.insert(project).values({
+    companyId: validatedData.companyId || null,
+    title: validatedData.title,
+    startDate: new Date(validatedData.startDate),
+    endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
+    technologies: validatedData.technologies,
+    description: validatedData.description,
+    responsibilities: validatedData.responsibilities || null,
+    achievements: validatedData.achievements || null,
+    displayOrder: validatedData.displayOrder,
+  });
 
-    // バリデーション
-    const validatedData = projectSchema.parse(body);
-
-    await db.insert(project).values({
-      companyId: validatedData.companyId || null,
-      title: validatedData.title,
-      startDate: new Date(validatedData.startDate),
-      endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
-      technologies: validatedData.technologies,
-      description: validatedData.description,
-      responsibilities: validatedData.responsibilities || null,
-      achievements: validatedData.achievements || null,
-      displayOrder: validatedData.displayOrder,
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Validation Error", details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error("Projects POST error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
+  return { success: true };
+}, "Projects POST");
