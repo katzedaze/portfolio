@@ -51,12 +51,16 @@ drizzle/
 .claude/
 .mcp.json
 
+# serena
+.serena/
+
 # documentation (project specific)
 要件定義書.md
 CLAUDE.md
 
 # images
 *.jpg
+*.JPG
 *.jpeg
 *.png
 *.gif
